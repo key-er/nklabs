@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="key-er and ram46">
+        
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+        <title>Setting up dynamodb locally (docker) - nklabs</title>
+        <link href="../../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+        <script src="../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../js/bootstrap-3.0.3.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+
+                <!-- Collapsed navigation -->
+                <div class="navbar-header">
+                    <!-- Expander button -->
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="../..">nklabs</a>
+                </div>
+
+                <!-- Expanded navigation -->
+                <div class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li >
+                                <a href="../../tools/">Tools</a>
+                            </li>
+                            <li >
+                                <a href="../">Write-ups</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">User Guide <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li >
+    <a href="../../user-guide/getting-started/">Writing your docs</a>
+</li>
+                                    
+<li >
+    <a href="../../user-guide/configuration-options/">Styling your docs</a>
+</li>
+                                </ul>
+                            </li>
+                            <li >
+                                <a href="../../about/">About</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li>
+                                <a href="https://github.com/nk-labs/nklabs/blob/master/nklabs/docs/writeups/local-dynamodb.md"><i class="fa fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+        <li class="main active"><a href="#setting-up-dynamodb-locally-docker">Setting up dynamodb locally (docker)</a></li>
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="setting-up-dynamodb-locally-docker">Setting up dynamodb locally (docker)</h1>
+<p>References</p>
+<ul>
+<li>docker: https://hub.docker.com/r/amazon/dynamodb-local/</li>
+<li>aws cli: https://docs.aws.amazon.com/cli/latest/reference/dynamodb/index.html</li>
+<li>https://docs.aws.amazon.com/sdk-for-go/v1/developer-guide/configuring-sdk.html</li>
+</ul>
+<h4> Pull and run docker on port 7000 </h4>
+
+<p><code>docker pull amazon/dynamodb-local</code>
+<code>docker run -p 7000:8000 amazon/dynamodb-local</code></p>
+<p>$ cat ~/.aws/credentials</p>
+<pre><code>[default]
+aws_access_key_id = fakeid
+aws_secret_access_key = fakekey
+</code></pre>
+
+<p>$ cat ~/.aws/config</p>
+<pre><code>[default]
+region = x
+
+</code></pre>
+
+<p>[default]
+aws_access_key_id = fakeMyKeyId
+aws_secret_access_key = fakeSecret</p>
+<h1> AWS CLI Commands </h1>
+
+<p><b> List Tables </b>
+<code>aws dynamodb list-tables --endpoint-url http://localhost:7000</code></p>
+<p><b> Create a table </b></p>
+<p>KeyType - The role of the attribute:
+  HASH - partition key
+  RANGE - sort key</p>
+<p>1- Creating a table MusicCollection with partition field 'Artist' and sort field 'SongTitle'</p>
+<pre><code>aws dynamodb create-table --table-name MusicCollection --attribute-definitions AttributeName=Artist,AttributeType=S AttributeName=SongTitle,AttributeType=S --key-schema AttributeName=Artist,KeyType=HASH AttributeName=SongTitle,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --endpoint-url http://localhost:7000
+</code></pre>
+
+<p>2- Creating a table Computers with partition field 'Vendor' only</p>
+<pre><code>aws dynamodb create-table --table-name Computers --attribute-definitions AttributeName=Vendor,AttributeType=S --key-schema AttributeName=Vendor,KeyType=HASH  --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --endpoint-url http://localhost:7000
+</code></pre>
+
+<h3>  Table details </h3>
+
+<pre><code>aws dynamodb describe-table --table-name Computers --endpoint-url http://localhost:7000
+</code></pre>
+
+<h1> Dynamodb Go SDK </h1>
+
+<p>$ cat main.go
+$ go run main.go</p>
+<pre><code>
+package main
+
+import (
+  &quot;fmt&quot;
+
+  &quot;github.com/aws/aws-sdk-go/aws&quot;
+  &quot;github.com/aws/aws-sdk-go/aws/session&quot;
+  &quot;github.com/aws/aws-sdk-go/service/dynamodb&quot;
+)
+
+const (
+  tablename = &quot;Blogs&quot;
+)
+
+func main() {
+
+  ////////////////////////// create table ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  // creating a session with Dynamodb
+  awsConfig := aws.Config{
+    Endpoint: aws.String(&quot;http://localhost:7000&quot;),
+  }
+
+  sess := session.Must(session.NewSessionWithOptions(session.Options{
+    SharedConfigState: session.SharedConfigEnable,
+    Config:            awsConfig,
+  }))
+
+  // Create dynamodb service using the above created session
+  svc := dynamodb.New(sess, aws.NewConfig())
+
+  // Create table schema
+  input := &amp;dynamodb.CreateTableInput{
+    AttributeDefinitions: []*dynamodb.AttributeDefinition{
+      {
+        AttributeName: aws.String(&quot;Title&quot;),
+        AttributeType: aws.String(&quot;S&quot;),
+      },
+    },
+    KeySchema: []*dynamodb.KeySchemaElement{
+      {
+        AttributeName: aws.String(&quot;Title&quot;),
+        KeyType:       aws.String(&quot;HASH&quot;),
+      },
+    },
+    ProvisionedThroughput: &amp;dynamodb.ProvisionedThroughput{
+      ReadCapacityUnits:  aws.Int64(5),
+      WriteCapacityUnits: aws.Int64(5),
+    },
+    TableName: aws.String(tablename),
+  }
+
+  result, err := svc.CreateTable(input)
+  if err != nil {
+    fmt.Println(&quot;-------- -----------&quot;)
+    fmt.Println(err)
+  }
+
+  fmt.Println(&quot;+++++++++ 1 ++++++++&quot;)
+  fmt.Println(sess)
+  fmt.Println(result)
+
+  ////////////////////////// list tables ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  listInput := &amp;dynamodb.ListTablesInput{}
+  tables, err := svc.ListTables(listInput)
+  fmt.Println(&quot;+++++++++ 2 ++++++++&quot;)
+  fmt.Println(tables)
+
+  ////////////////////////// insert item ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  putInput := &amp;dynamodb.PutItemInput{
+    Item: map[string]*dynamodb.AttributeValue{
+      &quot;Title&quot;: {
+        S: aws.String(&quot;No One You Know22&quot;),
+      },
+    },
+    ReturnConsumedCapacity: aws.String(&quot;TOTAL&quot;),
+    TableName:              aws.String(tablename),
+  }
+
+  item, err := svc.PutItem(putInput)
+  fmt.Println(&quot;+++++++++ 3 ++++++++&quot;)
+  fmt.Println(item, err)
+  ////////////////////////// read all items  ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  params := &amp;dynamodb.ScanInput{
+    TableName: aws.String(tablename),
+  }
+  scanResult, err := svc.Scan(params)
+  if err != nil {
+    fmt.Errorf(&quot;failed to make Query API call, %v&quot;, err)
+  }
+
+  fmt.Println(&quot;+++++++++ 4 ++++++++&quot;)
+  fmt.Println(scanResult)
+
+  ////////////////////////// read an item  ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  getInput := &amp;dynamodb.GetItemInput{
+    Key: map[string]*dynamodb.AttributeValue{
+      &quot;Title&quot;: {
+        S: aws.String(&quot;No One You Know&quot;),
+      },
+    },
+    TableName: aws.String(tablename),
+  }
+
+  itemQ, err := svc.GetItem(getInput)
+  fmt.Println(&quot;+++++++++ 5 ++++++++&quot;)
+  fmt.Println(itemQ)
+  ////////////////////////// delete item  ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+  delItemInput := &amp;dynamodb.DeleteItemInput{
+    Key: map[string]*dynamodb.AttributeValue{
+      &quot;Title&quot;: {
+        S: aws.String(&quot;No One You Know&quot;),
+      },
+    },
+    TableName: aws.String(tablename),
+  }
+  delItem, err := svc.DeleteItem(delItemInput)
+  fmt.Println(&quot;+++++++++ 6 ++++++++&quot;)
+  fmt.Println(delItem, err)
+
+  ////////////////////////// update item  ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+
+
+
+var params = {
+    TableName:tablename,
+    Key:{
+        &quot;Title&quot;: &quot;No One You Know&quot;
+    },
+    UpdateExpression: &quot;set info.rating = :r, info.plot=:p, info.actors=:a&quot;,
+    ExpressionAttributeValues:{
+        &quot;:r&quot;:5.5,
+        &quot;:p&quot;:&quot;Everything happens all at once.&quot;,
+        &quot;:a&quot;:[&quot;Larry&quot;, &quot;Moe&quot;, &quot;Curly&quot;]
+    },
+    ReturnValues:&quot;UPDATED_NEW&quot;
+};
+  ////////////////////////// delete table  ////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////
+  delTabInput := &amp;dynamodb.DeleteTableInput{
+    TableName: aws.String(tablename),
+  }
+  delTable, err := svc.DeleteTable(delTabInput)
+
+  fmt.Println(&quot;+++++++++ 7 ++++++++&quot;)
+  fmt.Println(delTable, err)
+}
+</code></pre>
+
+<h3> Bug Fix </h3>
+
+<p>Note, if you find error like "table x does not exist", then run dynamodb with sharedb turned on.</p>
+<pre><code>docker run -p 8000:8000 -v $(pwd)/local/dynamodb:/data/ amazon/dynamodb-local -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+</code></pre>
+
+<p>https://forums.aws.amazon.com/message.jspa?messageID=869395</p></div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>All right reserved ®</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../js/base.js" defer></script>
+        <script src="../../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form role="form">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="Keyboard Shortcuts Modal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Keyboard Shortcuts</h4>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
